@@ -23,13 +23,14 @@ export function DashboardPage() {
       <div className="section-head compact-head"><div><span className="eyebrow">PANEL</span><h1>Centro de operaciones</h1><p>Publicaciones, propuestas, leads, visitas y reputación en un único lugar.</p></div><Link to="/publicar" className="primary"><Plus size={17}/>Publicar propiedad</Link></div>
 
       <div className="dashboard-grid">
-        <article className="panel dashboard-card"><Home/><div><strong>0</strong><span>Propiedades activas</span></div><Link to="/publicar">Crear publicación →</Link></article>
+        <article className="panel dashboard-card"><Home/><div><strong>—</strong><span>Propiedades</span></div>{isOwner?<Link to="/mis-propiedades">Gestionar cartera →</Link>:<Link to="/propiedades">Explorar →</Link>}</article>
         <article className="panel dashboard-card"><ClipboardList/><div><strong>0</strong><span>{isProfessional?'Captaciones':'Propuestas recibidas'}</span></div>{isProfessional?<Link to="/oportunidades">Ver oportunidades →</Link>:isOwner?<Link to="/propuestas">Comparar propuestas →</Link>:<span className="muted-text">Marketplace inverso</span>}</article>
         <article className="panel dashboard-card"><MessageSquare/><div><strong>0</strong><span>Leads abiertos</span></div>{hasCrm?<Link to="/crm">Abrir CRM →</Link>:<span className="muted-text">Consultas de propiedades</span>}</article>
         <article className="panel dashboard-card"><Building2/><div><strong>—</strong><span>Trust Score</span></div>{canHaveProfessionalProfile?<Link to="/perfil-profesional">Gestionar perfil →</Link>:<span className="muted-text">Sin datos suficientes</span>}</article>
       </div>
 
       <div className="dashboard-actions-grid">
+        {isOwner&&<Link className="panel quick-action" to="/mis-propiedades"><Home/><span><b>Gestionar mi cartera</b><small>Editar, pausar, republicar o cerrar avisos.</small></span></Link>}
         <Link className="panel quick-action" to="/propiedades"><Search/><span><b>Explorar propiedades</b><small>Catálogo público y filtros.</small></span></Link>
         {isProfessional&&<Link className="panel quick-action" to="/oportunidades"><ClipboardList/><span><b>Buscar captaciones</b><small>Propietarios que aceptan propuestas.</small></span></Link>}
         {isOwner&&<Link className="panel quick-action" to="/propuestas"><ShieldCheck/><span><b>Comparar propuestas</b><small>Rango, comisión, plazo y estrategia.</small></span></Link>}
@@ -38,7 +39,7 @@ export function DashboardPage() {
         {isAdmin&&<Link className="panel quick-action" to="/admin"><ShieldCheck/><span><b>Super Admin</b><small>Verificaciones, reputación y control operativo.</small></span></Link>}
       </div>
 
-      <section className="panel dashboard-section"><div><span className="eyebrow">FLUJO ACTIVO</span><h2>De la publicación a la reputación verificable</h2><p>PropTrust conecta captación, consultas, visitas, CRM, verificación profesional y evidencia reputacional.</p></div><Link className="primary" to={isAdmin?'/admin':canHaveProfessionalProfile?'/perfil-profesional':hasCrm?'/crm':'/propiedades'}>{isAdmin?'Abrir Super Admin':canHaveProfessionalProfile?'Gestionar perfil':hasCrm?'Abrir CRM':'Explorar propiedades'}</Link></section>
+      <section className="panel dashboard-section"><div><span className="eyebrow">FLUJO ACTIVO</span><h2>De la publicación a la reputación verificable</h2><p>PropTrust conecta captación, consultas, visitas, CRM, verificación profesional y evidencia reputacional.</p></div><Link className="primary" to={isAdmin?'/admin':isOwner?'/mis-propiedades':canHaveProfessionalProfile?'/perfil-profesional':hasCrm?'/crm':'/propiedades'}>{isAdmin?'Abrir Super Admin':isOwner?'Gestionar cartera':canHaveProfessionalProfile?'Gestionar perfil':hasCrm?'Abrir CRM':'Explorar propiedades'}</Link></section>
     </main>
   </div>
 }
