@@ -20,7 +20,8 @@ export function applySeo(input:SeoInput){
   upsertMeta('meta[property="og:description"]',{property:'og:description',content:input.description})
   upsertMeta('meta[property="og:type"]',{property:'og:type',content:input.type||'website'})
   upsertMeta('meta[name="twitter:card"]',{name:'twitter:card',content:'summary_large_image'})
-  const base='https://proptrust.com.ar'
+  const configured=(import.meta.env.VITE_PUBLIC_SITE_URL||'').replace(/\/$/,'')
+  const base=configured||window.location.origin
   const canonical=base+(input.canonicalPath||'/')
   let link=document.head.querySelector('link[rel="canonical"]') as HTMLLinkElement|null
   if(!link){ link=document.createElement('link'); link.rel='canonical'; document.head.appendChild(link) }
