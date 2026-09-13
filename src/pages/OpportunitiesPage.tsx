@@ -32,18 +32,30 @@ export function OpportunitiesPage(){
       setError('Completá rango de tasación y estrategia comercial.')
       return
     }
-    if(!firebaseConfigured){
-      setMessage('Propuesta demo validada. Con Firebase activo se guardará en Firestore.')
+    if(Number(form.valuationMin)>Number(form.valuationMax)){
+      setError('La valoración mínima no puede superar la máxima.')
       return
     }
-    if(!user) return
+    if(!firebaseConfigured){
+      setMessage('Propuesta demo validada. Con Firebase activo se guardará en Firestore.')
+      setSelected(null)
+      return
+    }
+    if(!user||!profile) return
     setBusy(true);setError('');setMessage('')
     try{
       const proposal:AgencyProposal={
-        propertyId:selected.id!, professionalId:user.uid,
-        valuationMin:Number(form.valuationMin), valuationMax:Number(form.valuationMax),
-        commissionPct:Number(form.commissionPct), estimatedDays:Number(form.estimatedDays),
-        strategy:form.strategy.trim(), services:form.services.split(',').map(x=>x.trim()).filter(Boolean), status:'sent',
+        propertyId:selected.id!,
+        professionalId:user.uid,
+        professionalName:profile.displayName,
+        professionalRole:profile.role==='AGENCY'?'AGENCY':'AGENT',
+        valuationMin:Number(form.valuationMin),
+        valuationMax:Number(form.valuationMax),
+        commissionPct:Number(form.commissionPct),
+        estimatedDays:Number(form.estimatedDays),
+        strategy:form.strategy.trim(),
+        services:form.services.split(',').map(x=>x.trim()).filter(Boolean),
+        status:'sent',
       }
       await submitProposal(proposal)
       setMessage('Propuesta enviada correctamente.')
