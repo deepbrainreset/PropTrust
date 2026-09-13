@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { ArrowLeft, Bath, BedDouble, CalendarDays, CheckCircle2, Loader2, MapPin, MessageSquare, Ruler, ShieldCheck } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
+import { applySeo } from '../lib/seo'
 import { createLead, createVisitRequest } from '../services/crm'
 import { getProperty } from '../services/properties'
 import { calculatePropertyScore } from '../services/scoring'
@@ -15,6 +16,7 @@ export function PropertyDetailPage(){
   const [contactText,setContactText]=useState('Hola, me interesa esta propiedad. Quisiera recibir más información.'); const [visitDate,setVisitDate]=useState(''); const [visitTime,setVisitTime]=useState(''); const [visitNotes,setVisitNotes]=useState(''); const [busy,setBusy]=useState<'contact'|'visit'|''>('')
 
   useEffect(()=>{ if(!firebaseConfigured)return; setLoading(true); getProperty(id).then(p=>{ if(!p||p.status!=='published')setError('La propiedad no existe o ya no está publicada.'); else setProperty(p) }).catch(err=>setError(err instanceof Error?err.message:'No se pudo cargar la propiedad.')).finally(()=>setLoading(false)) },[firebaseConfigured,id])
+  useEffect(()=>{ if(!property)return; return applySeo({title:`${property.title} en ${property.neighborhood} | PropTrust`,description:`${property.propertyType} en ${property.neighborhood}, ${property.city}. ${property.rooms} ambientes, ${property.areaM2} m². Precio ${property.currency} ${property.price.toLocaleString('es-AR')}.`,canonicalPath:`/propiedad/${property.id||id}`,type:'article',structuredData:{'@context':'https://schema.org','@type':'RealEstateListing',name:property.title,description:property.description,address:{'@type':'PostalAddress',addressLocality:property.city,addressRegion:property.neighborhood,addressCountry:'AR'},floorSize:{'@type':'QuantitativeValue',value:property.areaM2,unitCode:'MTK'},offers:{'@type':'Offer',price:property.price,priceCurrency:property.currency,availability:'https://schema.org/InStock'}}}) },[property,id])
   const requester=useMemo(()=>({id:user?.uid||'demo-requester',name:profile?.displayName||user?.displayName||'Usuario demo',email:profile?.email||user?.email||'demo@example.com'}),[user,profile])
   const score=useMemo(()=>property?calculatePropertyScore(property):null,[property])
 
