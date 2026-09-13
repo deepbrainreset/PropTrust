@@ -8,6 +8,7 @@ import './register.css'
 import './marketplace.css'
 import './crm.css'
 import './professional.css'
+import './admin.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

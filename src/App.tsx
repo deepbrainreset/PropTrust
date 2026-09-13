@@ -1,5 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { ProtectedRoute } from './auth/ProtectedRoute'
+import { AdminVerificationPage } from './pages/AdminVerificationPage'
 import { CrmPage } from './pages/CrmPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { HomePage } from './pages/HomePage'
@@ -28,6 +29,7 @@ export function App() {
       <Route path="/propuestas" element={<ProtectedRoute><OwnerProposalsPage /></ProtectedRoute>} />
       <Route path="/crm" element={<ProtectedRoute><CrmPage /></ProtectedRoute>} />
       <Route path="/perfil-profesional" element={<ProtectedRoute><ProfessionalProfilePage /></ProtectedRoute>} />
+      <Route path="/admin/verificaciones" element={<ProtectedRoute><AdminVerificationPage /></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   </BrowserRouter>
