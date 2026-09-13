@@ -28,7 +28,7 @@ export function LoginPage() {
 
   return <div className="page-shell auth-page">
     <div className="auth-card panel">
-      <div className="brand"><div className="brand-mark"><ShieldCheck size={22}/></div><span>PropTrust</span></div>
+      <Link to="/" className="brand"><div className="brand-mark"><ShieldCheck size={22}/></div><span>PropTrust</span></Link>
       <div>
         <span className="eyebrow">ACCESO</span>
         <h1>Ingresá a tu cuenta</h1>
@@ -42,6 +42,7 @@ export function LoginPage() {
       {error && <div className="notice error">{error}</div>}
       <button className="primary wide" disabled={busy || !firebaseConfigured} onClick={()=>run(()=>signInEmail(email,password))}><LogIn size={17}/>Ingresar</button>
       <button className="ghost wide" disabled={busy || !firebaseConfigured} onClick={()=>run(signInGoogle)}>Continuar con Google</button>
+      <div className="auth-foot">¿No tenés cuenta? <Link className="text-link" to="/registro">Crear cuenta</Link></div>
       <Link className="text-link" to="/">← Volver al inicio</Link>
     </div>
   </div>
