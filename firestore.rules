@@ -1,177 +1,77 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    function signedIn() { return request.auth != null; }
-    function isOwner(userId) { return signedIn() && request.auth.uid == userId; }
-    function userDoc() { return get(/databases/$(database)/documents/users/$(request.auth.uid)); }
-    function hasRole(roles) { return signedIn() && userDoc().data.role in roles; }
-    function isAdmin() { return hasRole(['ADMIN', 'SUPER_ADMIN']); }
-    function selfAssignableRole(role) { return role in ['BUYER', 'OWNER', 'AGENT', 'AGENCY']; }
-    function propertyDoc(propertyId) { return get(/databases/$(database)/documents/properties/$(propertyId)); }
-    function ownsTargetProperty(propertyId) { return signedIn() && propertyDoc(propertyId).data.ownerId == request.auth.uid; }
-    function proposalStatusOnlyChanged() { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt']); }
-    function leadStageOnlyChanged() { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stage', 'updatedAt']); }
-    function visitStatusOnlyChanged() { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt']); }
-    function professionalUserFieldsOnlyChanged() {
-      return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-        'displayName', 'bio', 'city', 'neighborhoods', 'licenseNumber', 'licenseJurisdiction',
-        'publicEmail', 'publicPhone', 'website', 'logoUrl', 'yearsExperience',
-        'verificationStatus', 'verificationRequestedAt', 'updatedAt'
-      ]);
-    }
+    function signedIn(){ return request.auth != null; }
+    function isOwner(userId){ return signedIn() && request.auth.uid == userId; }
+    function userDoc(){ return get(/databases/$(database)/documents/users/$(request.auth.uid)); }
+    function hasRole(roles){ return signedIn() && userDoc().data.role in roles; }
+    function isAdmin(){ return hasRole(['ADMIN','SUPER_ADMIN']); }
+    function selfAssignableRole(role){ return role in ['BUYER','OWNER','AGENT','AGENCY']; }
+    function propertyDoc(propertyId){ return get(/databases/$(database)/documents/properties/$(propertyId)); }
+    function ownsTargetProperty(propertyId){ return signedIn() && propertyDoc(propertyId).data.ownerId == request.auth.uid; }
+    function proposalStatusOnlyChanged(){ return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','updatedAt']); }
+    function leadStageOnlyChanged(){ return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stage','updatedAt']); }
+    function visitStatusOnlyChanged(){ return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','updatedAt']); }
+    function transactionDoc(id){ return get(/databases/$(database)/documents/transactions/$(id)); }
+    function professionalUserFieldsOnlyChanged(){ return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName','bio','city','neighborhoods','licenseNumber','licenseJurisdiction','publicEmail','publicPhone','website','logoUrl','yearsExperience','verificationStatus','verificationRequestedAt','updatedAt']); }
 
     match /users/{userId} {
-      allow read: if isOwner(userId) || isAdmin();
-      allow create: if isOwner(userId) && selfAssignableRole(request.resource.data.role);
-      allow update: if (isOwner(userId) && selfAssignableRole(request.resource.data.role)) || isAdmin();
+      allow read: if isOwner(userId)||isAdmin();
+      allow create: if isOwner(userId)&&selfAssignableRole(request.resource.data.role);
+      allow update: if (isOwner(userId)&&selfAssignableRole(request.resource.data.role))||isAdmin();
       allow delete: if isAdmin();
     }
 
     match /professionals/{professionalId} {
       allow read: if true;
-
-      allow create: if signedIn()
-        && professionalId == request.auth.uid
-        && request.resource.data.userId == request.auth.uid
-        && userDoc().data.role in ['AGENT', 'AGENCY']
-        && request.resource.data.professionalType == userDoc().data.role
-        && request.resource.data.verificationStatus == 'unverified'
-        && request.resource.data.verifiedTransactions == 0
-        && request.resource.data.reviewCount == 0
-        && request.resource.data.ratingAverage == null
-        && request.resource.data.responseRate == null
-        && request.resource.data.averageResponseMinutes == null
-        && request.resource.data.trustScore == null;
-
-      allow update: if isAdmin()
-        || (
-          signedIn()
-          && professionalId == request.auth.uid
-          && resource.data.userId == request.auth.uid
-          && request.resource.data.userId == resource.data.userId
-          && request.resource.data.professionalType == resource.data.professionalType
-          && professionalUserFieldsOnlyChanged()
-          && (
-            request.resource.data.verificationStatus == resource.data.verificationStatus
-            || (
-              request.resource.data.verificationStatus == 'pending'
-              && resource.data.verificationStatus in ['unverified', 'rejected', 'pending']
-            )
-          )
-        );
-
+      allow create: if signedIn() && professionalId==request.auth.uid && request.resource.data.userId==request.auth.uid && userDoc().data.role in ['AGENT','AGENCY'] && request.resource.data.professionalType==userDoc().data.role && request.resource.data.verificationStatus=='unverified' && request.resource.data.verifiedTransactions==0 && request.resource.data.reviewCount==0 && request.resource.data.ratingAverage==null && request.resource.data.responseRate==null && request.resource.data.averageResponseMinutes==null && request.resource.data.trustScore==null;
+      allow update: if isAdmin() || (signedIn() && professionalId==request.auth.uid && resource.data.userId==request.auth.uid && request.resource.data.userId==resource.data.userId && request.resource.data.professionalType==resource.data.professionalType && professionalUserFieldsOnlyChanged() && (request.resource.data.verificationStatus==resource.data.verificationStatus || (request.resource.data.verificationStatus=='pending' && resource.data.verificationStatus in ['unverified','rejected','pending'])));
       allow delete: if isAdmin();
     }
 
     match /properties/{propertyId} {
-      allow read: if resource.data.status == 'published' || (signedIn() && resource.data.ownerId == request.auth.uid) || isAdmin();
-      allow create: if signedIn() && request.resource.data.ownerId == request.auth.uid;
-      allow update, delete: if (signedIn() && resource.data.ownerId == request.auth.uid) || isAdmin();
+      allow read: if resource.data.status=='published'||(signedIn()&&resource.data.ownerId==request.auth.uid)||isAdmin();
+      allow create: if signedIn()&&request.resource.data.ownerId==request.auth.uid;
+      allow update,delete: if (signedIn()&&resource.data.ownerId==request.auth.uid)||isAdmin();
     }
 
     match /proposals/{proposalId} {
-      allow create: if hasRole(['AGENT', 'AGENCY'])
-        && request.resource.data.professionalId == request.auth.uid
-        && request.resource.data.professionalName == userDoc().data.displayName
-        && request.resource.data.professionalRole == userDoc().data.role
-        && request.resource.data.status == 'sent'
-        && propertyDoc(request.resource.data.propertyId).data.status == 'published'
-        && propertyDoc(request.resource.data.propertyId).data.acceptsAgencyProposals == true;
-
-      allow read: if signedIn() && (
-        resource.data.professionalId == request.auth.uid
-        || ownsTargetProperty(resource.data.propertyId)
-        || isAdmin()
-      );
-
-      allow update: if isAdmin()
-        || (
-          signedIn()
-          && proposalStatusOnlyChanged()
-          && resource.data.professionalId == request.auth.uid
-          && resource.data.status == 'sent'
-          && request.resource.data.status == 'withdrawn'
-        )
-        || (
-          signedIn()
-          && proposalStatusOnlyChanged()
-          && ownsTargetProperty(resource.data.propertyId)
-          && resource.data.status == 'sent'
-          && request.resource.data.status in ['accepted', 'rejected']
-        );
-
+      allow create: if hasRole(['AGENT','AGENCY']) && request.resource.data.professionalId==request.auth.uid && request.resource.data.professionalName==userDoc().data.displayName && request.resource.data.professionalRole==userDoc().data.role && request.resource.data.status=='sent' && propertyDoc(request.resource.data.propertyId).data.status=='published' && propertyDoc(request.resource.data.propertyId).data.acceptsAgencyProposals==true;
+      allow read: if signedIn()&&(resource.data.professionalId==request.auth.uid||ownsTargetProperty(resource.data.propertyId)||isAdmin());
+      allow update: if isAdmin() || (signedIn()&&proposalStatusOnlyChanged()&&resource.data.professionalId==request.auth.uid&&resource.data.status=='sent'&&request.resource.data.status=='withdrawn') || (signedIn()&&proposalStatusOnlyChanged()&&ownsTargetProperty(resource.data.propertyId)&&resource.data.status=='sent'&&request.resource.data.status in ['accepted','rejected']);
       allow delete: if isAdmin();
     }
 
+    match /transactions/{transactionId} {
+      allow read: if signedIn() && (resource.data.clientId==request.auth.uid || resource.data.professionalId==request.auth.uid || isAdmin());
+      allow create,update,delete: if isAdmin();
+    }
+
     match /reviews/{reviewId} {
-      allow read: if true;
-      allow create: if signedIn() && request.resource.data.authorId == request.auth.uid;
-      allow update, delete: if (signedIn() && resource.data.authorId == request.auth.uid) || isAdmin();
+      allow read: if resource.data.status=='published'||isAdmin();
+      allow create: if signedIn() && request.resource.data.authorId==request.auth.uid && request.resource.data.rating>=1 && request.resource.data.rating<=5 && request.resource.data.status=='published' && (
+        request.resource.data.verifiedTransaction==false || (
+          request.resource.data.transactionId is string && transactionDoc(request.resource.data.transactionId).data.status=='verified' && transactionDoc(request.resource.data.transactionId).data.clientId==request.auth.uid && transactionDoc(request.resource.data.transactionId).data.professionalId==request.resource.data.professionalId
+        )
+      );
+      allow update,delete: if isAdmin();
     }
 
     match /leads/{leadId} {
-      allow create: if signedIn()
-        && request.resource.data.requesterId == request.auth.uid
-        && request.resource.data.ownerId == propertyDoc(request.resource.data.propertyId).data.ownerId
-        && request.resource.data.assigneeId == propertyDoc(request.resource.data.propertyId).data.ownerId
-        && propertyDoc(request.resource.data.propertyId).data.status == 'published'
-        && request.resource.data.stage in ['new', 'visit'];
-
-      allow read: if signedIn() && (
-        resource.data.requesterId == request.auth.uid
-        || resource.data.ownerId == request.auth.uid
-        || resource.data.assigneeId == request.auth.uid
-        || isAdmin()
-      );
-
-      allow update: if isAdmin()
-        || (
-          signedIn()
-          && leadStageOnlyChanged()
-          && (resource.data.ownerId == request.auth.uid || resource.data.assigneeId == request.auth.uid)
-          && request.resource.data.stage in ['new', 'contacted', 'visit', 'negotiation', 'reservation', 'closed', 'lost']
-        );
-
+      allow create: if signedIn()&&request.resource.data.requesterId==request.auth.uid&&request.resource.data.ownerId==propertyDoc(request.resource.data.propertyId).data.ownerId&&request.resource.data.assigneeId==propertyDoc(request.resource.data.propertyId).data.ownerId&&propertyDoc(request.resource.data.propertyId).data.status=='published'&&request.resource.data.stage in ['new','visit'];
+      allow read: if signedIn()&&(resource.data.requesterId==request.auth.uid||resource.data.ownerId==request.auth.uid||resource.data.assigneeId==request.auth.uid||isAdmin());
+      allow update: if isAdmin()||(signedIn()&&leadStageOnlyChanged()&&(resource.data.ownerId==request.auth.uid||resource.data.assigneeId==request.auth.uid)&&request.resource.data.stage in ['new','contacted','visit','negotiation','reservation','closed','lost']);
       allow delete: if isAdmin();
     }
 
     match /visits/{visitId} {
-      allow create: if signedIn()
-        && request.resource.data.requesterId == request.auth.uid
-        && request.resource.data.ownerId == propertyDoc(request.resource.data.propertyId).data.ownerId
-        && propertyDoc(request.resource.data.propertyId).data.status == 'published'
-        && request.resource.data.status == 'pending';
-
-      allow read: if signedIn() && (
-        resource.data.requesterId == request.auth.uid
-        || resource.data.ownerId == request.auth.uid
-        || isAdmin()
-      );
-
-      allow update: if isAdmin()
-        || (
-          signedIn()
-          && visitStatusOnlyChanged()
-          && resource.data.ownerId == request.auth.uid
-          && request.resource.data.status in ['confirmed', 'rejected', 'completed']
-        )
-        || (
-          signedIn()
-          && visitStatusOnlyChanged()
-          && resource.data.requesterId == request.auth.uid
-          && request.resource.data.status == 'cancelled'
-        );
-
+      allow create: if signedIn()&&request.resource.data.requesterId==request.auth.uid&&request.resource.data.ownerId==propertyDoc(request.resource.data.propertyId).data.ownerId&&propertyDoc(request.resource.data.propertyId).data.status=='published'&&request.resource.data.status=='pending';
+      allow read: if signedIn()&&(resource.data.requesterId==request.auth.uid||resource.data.ownerId==request.auth.uid||isAdmin());
+      allow update: if isAdmin()||(signedIn()&&visitStatusOnlyChanged()&&resource.data.ownerId==request.auth.uid&&request.resource.data.status in ['confirmed','rejected','completed'])||(signedIn()&&visitStatusOnlyChanged()&&resource.data.requesterId==request.auth.uid&&request.resource.data.status=='cancelled');
       allow delete: if isAdmin();
     }
 
-    match /auditLogs/{logId} {
-      allow read: if isAdmin();
-      allow write: if false;
-    }
-
-    match /{document=**} {
-      allow read, write: if false;
-    }
+    match /auditLogs/{logId} { allow read: if isAdmin(); allow write: if false; }
+    match /{document=**} { allow read,write: if false; }
   }
 }
