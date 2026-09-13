@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { ArrowLeft, Bath, BedDouble, Loader2, MapPin, Ruler, Search, ShieldCheck } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { firebaseConfigured } from '../lib/firebase'
+import { applySeo } from '../lib/seo'
 import { listPublishedProperties } from '../services/properties'
 import type { PropertyRecord } from '../types/domain'
 
@@ -17,28 +18,16 @@ export function PropertiesPage(){
   const [operation,setOperation]=useState<'all'|'sale'|'rent'|'temporary'>('all')
   const [error,setError]=useState('')
 
-  useEffect(()=>{
-    if(!firebaseConfigured) return
-    listPublishedProperties().then(setProperties).catch(err=>setError(err instanceof Error?err.message:'No se pudieron cargar las propiedades.')).finally(()=>setLoading(false))
-  },[])
+  useEffect(()=>applySeo({title:'Propiedades en venta y alquiler | PropTrust',description:'Explorá propiedades en venta, alquiler y temporario con información clara, Property Score y reputación profesional verificable.',canonicalPath:'/propiedades',structuredData:{'@context':'https://schema.org','@type':'CollectionPage',name:'Propiedades | PropTrust',description:'Marketplace inmobiliario con señales de confianza y reputación verificable.'}}),[])
+  useEffect(()=>{ if(!firebaseConfigured) return; listPublishedProperties().then(setProperties).catch(err=>setError(err instanceof Error?err.message:'No se pudieron cargar las propiedades.')).finally(()=>setLoading(false)) },[])
 
-  const filtered=useMemo(()=>properties.filter(p=>{
-    const q=query.trim().toLowerCase()
-    const matchText=!q || `${p.title} ${p.neighborhood} ${p.city} ${p.propertyType}`.toLowerCase().includes(q)
-    const matchOperation=operation==='all'||p.operation===operation
-    return matchText&&matchOperation
-  }),[properties,query,operation])
+  const filtered=useMemo(()=>properties.filter(p=>{ const q=query.trim().toLowerCase(); const matchText=!q||`${p.title} ${p.neighborhood} ${p.city} ${p.propertyType}`.toLowerCase().includes(q); const matchOperation=operation==='all'||p.operation===operation; return matchText&&matchOperation }),[properties,query,operation])
 
   return <div className="page-shell">
     <div className="page-topbar"><Link to="/" className="text-link"><ArrowLeft size={16}/>Inicio</Link><span className="eyebrow">PROPIEDADES</span></div>
     <div className="catalog-head"><div><h1>Explorá propiedades</h1><p>Publicaciones activas. Los datos demo están identificados y nunca se presentan como operaciones reales.</p></div><Link to="/publicar" className="primary">Publicar gratis</Link></div>
-
     <div className="panel catalog-filters"><div className="filter-search"><Search size={18}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Barrio, ciudad, tipo o título" /></div><select value={operation} onChange={e=>setOperation(e.target.value as typeof operation)}><option value="all">Todas las operaciones</option><option value="sale">Venta</option><option value="rent">Alquiler</option><option value="temporary">Temporario</option></select></div>
-
-    {!firebaseConfigured&&<div className="notice warning">Modo demo: conectando Firebase, esta pantalla leerá exclusivamente publicaciones con estado <b>published</b>.</div>}
-    {error&&<div className="notice error">{error}</div>}
-    {loading&&<div className="catalog-empty"><Loader2 className="spin"/>Cargando propiedades…</div>}
-
+    {!firebaseConfigured&&<div className="notice warning">Modo demo: conectando Firebase, esta pantalla leerá exclusivamente publicaciones con estado <b>published</b>.</div>}{error&&<div className="notice error">{error}</div>}{loading&&<div className="catalog-empty"><Loader2 className="spin"/>Cargando propiedades…</div>}
     {!loading&&<div className="catalog-grid">{filtered.map(p=><Link className="property-card" key={p.id} to={`/propiedad/${p.id}`}><div className="property-image" style={{backgroundImage:`url(${p.imageUrls[0]||'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=1200&q=80'})`}}>{String(p.id).startsWith('demo')&&<span className="demo-badge">Demo</span>}<span className="score-badge">{p.propertyScore==null?'Score pendiente':`Score ${p.propertyScore}/100`}</span></div><div className="property-body"><div className="eyebrow">{p.operation==='sale'?'VENTA':p.operation==='rent'?'ALQUILER':'TEMPORARIO'}</div><h3>{p.title}</h3><div className="location"><MapPin size={15}/>{p.neighborhood}, {p.city}</div><strong className="price">{p.currency} {p.price.toLocaleString('es-AR')}</strong><div className="facts"><span><BedDouble size={16}/>{p.rooms} amb.</span><span><Bath size={16}/>{p.bathrooms}</span><span><Ruler size={16}/>{p.areaM2} m²</span></div><div className="card-meta"><ShieldCheck size={15}/>{p.acceptsAgencyProposals?'Acepta propuestas profesionales':'Dueño directo'}</div></div></Link>)}</div>}
     {!loading&&filtered.length===0&&<div className="catalog-empty">No encontramos propiedades con esos filtros.</div>}
   </div>
