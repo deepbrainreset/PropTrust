@@ -13,6 +13,7 @@ import { PropertiesPage } from './pages/PropertiesPage'
 import { PropertyDetailPage } from './pages/PropertyDetailPage'
 import { PublishPropertyPage } from './pages/PublishPropertyPage'
 import { RegisterPage } from './pages/RegisterPage'
+import { SuperAdminPage } from './pages/SuperAdminPage'
 
 export function App() {
   return <BrowserRouter>
@@ -29,6 +30,7 @@ export function App() {
       <Route path="/propuestas" element={<ProtectedRoute><OwnerProposalsPage /></ProtectedRoute>} />
       <Route path="/crm" element={<ProtectedRoute><CrmPage /></ProtectedRoute>} />
       <Route path="/perfil-profesional" element={<ProtectedRoute><ProfessionalProfilePage /></ProtectedRoute>} />
+      <Route path="/admin" element={<ProtectedRoute><SuperAdminPage /></ProtectedRoute>} />
       <Route path="/admin/verificaciones" element={<ProtectedRoute><AdminVerificationPage /></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
