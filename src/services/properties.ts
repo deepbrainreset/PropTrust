@@ -1,27 +1,19 @@
 import { addDoc, collection, doc, getDoc, getDocs, limit, orderBy, query, serverTimestamp, updateDoc, where } from 'firebase/firestore'
 import { getDownloadURL, ref as storageRef, uploadBytes } from 'firebase/storage'
 import { db, storage } from '../lib/firebase'
-import type { PropertyRecord } from '../types/domain'
+import type { PropertyRecord, PropertyStatus } from '../types/domain'
 
 export async function createProperty(input: PropertyRecord) {
   if (!db) throw new Error('Firebase no está configurado todavía.')
-
-  const ref = await addDoc(collection(db, 'properties'), {
-    ...input,
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
-  })
-
+  const ref = await addDoc(collection(db, 'properties'), { ...input, createdAt: serverTimestamp(), updatedAt: serverTimestamp() })
   return ref.id
 }
 
 export async function createPropertyWithImages(input: PropertyRecord, files: File[] = []) {
   if (!db) throw new Error('Firebase no está configurado todavía.')
   const id = await createProperty({ ...input, imageUrls: [] })
-
   if (!files.length) return id
   if (!storage) throw new Error('Firebase Storage no está configurado.')
-
   const urls: string[] = []
   for (const [index, file] of files.entries()) {
     if (!file.type.startsWith('image/')) continue
@@ -31,12 +23,7 @@ export async function createPropertyWithImages(input: PropertyRecord, files: Fil
     await uploadBytes(objectRef, file, { contentType: file.type })
     urls.push(await getDownloadURL(objectRef))
   }
-
-  await updateDoc(doc(db, 'properties', id), {
-    imageUrls: urls,
-    updatedAt: serverTimestamp(),
-  })
-
+  await updateDoc(doc(db, 'properties', id), { imageUrls: urls, updatedAt: serverTimestamp() })
   return id
 }
 
@@ -48,14 +35,7 @@ export async function getProperty(propertyId: string) {
 
 export async function listPublishedProperties(max = 24) {
   if (!db) return [] as PropertyRecord[]
-
-  const q = query(
-    collection(db, 'properties'),
-    where('status', '==', 'published'),
-    orderBy('createdAt', 'desc'),
-    limit(max),
-  )
-
+  const q = query(collection(db, 'properties'), where('status', '==', 'published'), orderBy('createdAt', 'desc'), limit(max))
   const snapshot = await getDocs(q)
   return snapshot.docs.map((snapshotDoc) => ({ id: snapshotDoc.id, ...snapshotDoc.data() })) as PropertyRecord[]
 }
@@ -65,4 +45,20 @@ export async function listOwnerProperties(ownerId: string) {
   const q = query(collection(db, 'properties'), where('ownerId', '==', ownerId))
   const snapshot = await getDocs(q)
   return snapshot.docs.map((snapshotDoc) => ({ id: snapshotDoc.id, ...snapshotDoc.data() })) as PropertyRecord[]
+}
+
+export async function updateOwnerProperty(propertyId:string, ownerId:string, changes:Partial<Pick<PropertyRecord,'title'|'description'|'price'|'currency'|'expenses'|'acceptsAgencyProposals'>>) {
+  if (!db) throw new Error('Firebase no está configurado todavía.')
+  const current=await getProperty(propertyId)
+  if(!current||current.ownerId!==ownerId) throw new Error('No tenés permiso para editar esta propiedad.')
+  await updateDoc(doc(db,'properties',propertyId),{...changes,updatedAt:serverTimestamp()})
+}
+
+export async function setOwnerPropertyStatus(propertyId:string, ownerId:string, status:PropertyStatus) {
+  if (!db) throw new Error('Firebase no está configurado todavía.')
+  const current=await getProperty(propertyId)
+  if(!current||current.ownerId!==ownerId) throw new Error('No tenés permiso para cambiar esta publicación.')
+  const allowed:PropertyStatus[]=['draft','published','paused','reserved','closed']
+  if(!allowed.includes(status)) throw new Error('Estado inválido.')
+  await updateDoc(doc(db,'properties',propertyId),{status,updatedAt:serverTimestamp()})
 }

@@ -7,6 +7,7 @@ import { FoundersPage } from './pages/FoundersPage'
 import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
 import { OpportunitiesPage } from './pages/OpportunitiesPage'
+import { OwnerPropertiesPage } from './pages/OwnerPropertiesPage'
 import { OwnerProposalsPage } from './pages/OwnerProposalsPage'
 import { PricingPage } from './pages/PricingPage'
 import { ProfessionalsPage } from './pages/ProfessionalsPage'
@@ -29,6 +30,7 @@ export function App() {
       <Route path="/ingresar" element={<LoginPage />} />
       <Route path="/registro" element={<RegisterPage />} />
       <Route path="/panel" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+      <Route path="/mis-propiedades" element={<ProtectedRoute><OwnerPropertiesPage /></ProtectedRoute>} />
       <Route path="/publicar" element={<ProtectedRoute><PublishPropertyPage /></ProtectedRoute>} />
       <Route path="/oportunidades" element={<ProtectedRoute><OpportunitiesPage /></ProtectedRoute>} />
       <Route path="/propuestas" element={<ProtectedRoute><OwnerProposalsPage /></ProtectedRoute>} />
