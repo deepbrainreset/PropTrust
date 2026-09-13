@@ -42,6 +42,8 @@ export interface AgencyProposal {
   id?: string
   propertyId: string
   professionalId: string
+  professionalName?: string
+  professionalRole?: 'AGENT' | 'AGENCY'
   valuationMin: number
   valuationMax: number
   commissionPct: number
@@ -50,4 +52,5 @@ export interface AgencyProposal {
   services: string[]
   status: 'sent' | 'accepted' | 'rejected' | 'withdrawn'
   createdAt?: unknown
+  updatedAt?: unknown
 }
