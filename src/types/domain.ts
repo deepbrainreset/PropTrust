@@ -3,6 +3,7 @@ export type UserRole = 'BUYER' | 'OWNER' | 'AGENT' | 'AGENCY' | 'ADMIN' | 'SUPER
 export type PropertyStatus = 'draft' | 'published' | 'paused' | 'reserved' | 'closed'
 export type PropertyOperation = 'sale' | 'rent' | 'temporary'
 export type LeadStage = 'new' | 'contacted' | 'visit' | 'negotiation' | 'reservation' | 'closed' | 'lost'
+export type VerificationStatus = 'unverified' | 'pending' | 'verified' | 'rejected'
 
 export interface UserProfile {
   id: string
@@ -11,6 +12,35 @@ export interface UserProfile {
   role: UserRole
   photoURL?: string
   createdAt?: unknown
+}
+
+export interface ProfessionalProfile {
+  id: string
+  userId: string
+  displayName: string
+  professionalType: 'AGENT' | 'AGENCY'
+  bio: string
+  city: string
+  neighborhoods: string[]
+  licenseNumber?: string
+  licenseJurisdiction?: string
+  verificationStatus: VerificationStatus
+  verificationRequestedAt?: unknown
+  verifiedAt?: unknown
+  verifiedBy?: string
+  publicEmail?: string
+  publicPhone?: string
+  website?: string
+  logoUrl?: string
+  yearsExperience?: number
+  verifiedTransactions: number
+  reviewCount: number
+  ratingAverage?: number | null
+  responseRate?: number | null
+  averageResponseMinutes?: number | null
+  trustScore?: number | null
+  createdAt?: unknown
+  updatedAt?: unknown
 }
 
 export interface PropertyRecord {
