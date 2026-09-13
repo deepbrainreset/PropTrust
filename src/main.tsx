@@ -6,6 +6,7 @@ import './styles.css'
 import './app.css'
 import './register.css'
 import './marketplace.css'
+import './crm.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

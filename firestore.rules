@@ -10,6 +10,8 @@ service cloud.firestore {
     function propertyDoc(propertyId) { return get(/databases/$(database)/documents/properties/$(propertyId)); }
     function ownsTargetProperty(propertyId) { return signedIn() && propertyDoc(propertyId).data.ownerId == request.auth.uid; }
     function proposalStatusOnlyChanged() { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt']); }
+    function leadStageOnlyChanged() { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stage', 'updatedAt']); }
+    function visitStatusOnlyChanged() { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt']); }
 
     match /users/{userId} {
       allow read: if isOwner(userId) || isAdmin();
@@ -65,8 +67,59 @@ service cloud.firestore {
     }
 
     match /leads/{leadId} {
-      allow create: if signedIn();
-      allow read, update, delete: if signedIn() && (resource.data.ownerId == request.auth.uid || resource.data.assigneeId == request.auth.uid || isAdmin());
+      allow create: if signedIn()
+        && request.resource.data.requesterId == request.auth.uid
+        && request.resource.data.ownerId == propertyDoc(request.resource.data.propertyId).data.ownerId
+        && request.resource.data.assigneeId == propertyDoc(request.resource.data.propertyId).data.ownerId
+        && propertyDoc(request.resource.data.propertyId).data.status == 'published'
+        && request.resource.data.stage in ['new', 'visit'];
+
+      allow read: if signedIn() && (
+        resource.data.requesterId == request.auth.uid
+        || resource.data.ownerId == request.auth.uid
+        || resource.data.assigneeId == request.auth.uid
+        || isAdmin()
+      );
+
+      allow update: if isAdmin()
+        || (
+          signedIn()
+          && leadStageOnlyChanged()
+          && (resource.data.ownerId == request.auth.uid || resource.data.assigneeId == request.auth.uid)
+          && request.resource.data.stage in ['new', 'contacted', 'visit', 'negotiation', 'reservation', 'closed', 'lost']
+        );
+
+      allow delete: if isAdmin();
+    }
+
+    match /visits/{visitId} {
+      allow create: if signedIn()
+        && request.resource.data.requesterId == request.auth.uid
+        && request.resource.data.ownerId == propertyDoc(request.resource.data.propertyId).data.ownerId
+        && propertyDoc(request.resource.data.propertyId).data.status == 'published'
+        && request.resource.data.status == 'pending';
+
+      allow read: if signedIn() && (
+        resource.data.requesterId == request.auth.uid
+        || resource.data.ownerId == request.auth.uid
+        || isAdmin()
+      );
+
+      allow update: if isAdmin()
+        || (
+          signedIn()
+          && visitStatusOnlyChanged()
+          && resource.data.ownerId == request.auth.uid
+          && request.resource.data.status in ['confirmed', 'rejected', 'completed']
+        )
+        || (
+          signedIn()
+          && visitStatusOnlyChanged()
+          && resource.data.requesterId == request.auth.uid
+          && request.resource.data.status == 'cancelled'
+        );
+
+      allow delete: if isAdmin();
     }
 
     match /auditLogs/{logId} {
