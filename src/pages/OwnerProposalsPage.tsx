@@ -25,9 +25,10 @@ export function OwnerProposalsPage(){
 
   useEffect(()=>{
     if(!firebaseConfigured||!user) return
+    const ownerId=user.uid
     async function load(){
       try{
-        const properties=await listOwnerProperties(user.uid)
+        const properties=await listOwnerProperties(ownerId)
         const result=await Promise.all(properties.filter(p=>p.acceptsAgencyProposals).map(async property=>({property,proposals:await listProposalsForProperty(property.id!)})))
         setBundles(result)
       }catch(err){setError(err instanceof Error?err.message:'No se pudieron cargar las propuestas.')}finally{setLoading(false)}
