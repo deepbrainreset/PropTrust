@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowLeft, CheckCircle2, Home, Loader2, Save } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, Home, ImagePlus, Loader2, Save } from 'lucide-react'
 import { useAuth } from '../auth/AuthContext'
-import { createProperty } from '../services/properties'
+import { createPropertyWithImages } from '../services/properties'
 import type { PropertyOperation, PropertyRecord } from '../types/domain'
 
 const initial = {
@@ -26,6 +26,7 @@ const initial = {
 export function PublishPropertyPage() {
   const { user, firebaseConfigured } = useAuth()
   const [form, setForm] = useState(initial)
+  const [images, setImages] = useState<File[]>([])
   const [status, setStatus] = useState<'idle'|'saving'|'success'|'error'>('idle')
   const [message, setMessage] = useState('')
 
@@ -41,7 +42,7 @@ export function PublishPropertyPage() {
 
     if (!firebaseConfigured) {
       setStatus('success')
-      setMessage('Demo validada. Al conectar Firebase, este formulario guardará la propiedad en Firestore.')
+      setMessage(`Demo validada con ${images.length} imagen${images.length===1?'':'es'}. Al conectar Firebase, se guardará en Firestore y Storage.`)
       return
     }
 
@@ -72,10 +73,11 @@ export function PublishPropertyPage() {
         imageUrls: [],
         propertyScore: null,
       }
-      const id = await createProperty(record)
+      const id = await createPropertyWithImages(record, images)
       setStatus('success')
       setMessage(`Propiedad ${publish ? 'publicada' : 'guardada como borrador'} · ID ${id}`)
       setForm(initial)
+      setImages([])
     } catch (err) {
       setStatus('error')
       setMessage(err instanceof Error ? err.message : 'No se pudo guardar la propiedad.')
@@ -90,9 +92,9 @@ export function PublishPropertyPage() {
 
         <div className="form-grid">
           <label className="span-2">Título<input value={form.title} onChange={e=>set('title',e.target.value)} placeholder="Ej. Departamento luminoso con balcón" /></label>
-          <label>Operación<select value={form.operation} onChange={e=>set('operation',e.target.value)}><option value="sale">Venta</option><option value="rent">Alquiler</option><option value="temporary">Temporario</option></select></label>
+          <label>Operación<select value={form.operation} onChange={e=>set('operation',e.target.value as PropertyOperation)}><option value="sale">Venta</option><option value="rent">Alquiler</option><option value="temporary">Temporario</option></select></label>
           <label>Tipo<select value={form.propertyType} onChange={e=>set('propertyType',e.target.value)}><option>Departamento</option><option>PH</option><option>Casa</option><option>Local</option><option>Oficina</option><option>Terreno</option></select></label>
-          <label>Moneda<select value={form.currency} onChange={e=>set('currency',e.target.value)}><option>USD</option><option>ARS</option></select></label>
+          <label>Moneda<select value={form.currency} onChange={e=>set('currency',e.target.value as 'USD'|'ARS')}><option>USD</option><option>ARS</option></select></label>
           <label>Precio<input type="number" min="0" value={form.price} onChange={e=>set('price',e.target.value)} /></label>
           <label>Barrio<input value={form.neighborhood} onChange={e=>set('neighborhood',e.target.value)} placeholder="Palermo" /></label>
           <label>Ciudad<input value={form.city} onChange={e=>set('city',e.target.value)} /></label>
@@ -103,6 +105,7 @@ export function PublishPropertyPage() {
           <label>Superficie total m²<input type="number" min="1" value={form.areaM2} onChange={e=>set('areaM2',e.target.value)} /></label>
           <label>Expensas<input type="number" min="0" value={form.expenses} onChange={e=>set('expenses',e.target.value)} /></label>
           <label className="span-2">Descripción<textarea rows={7} value={form.description} onChange={e=>set('description',e.target.value)} placeholder="Describí la propiedad sin datos de contacto ni afirmaciones no verificables." /></label>
+          <label className="span-2 upload-field"><span><ImagePlus size={18}/>Fotos <small>JPG/PNG/WebP · máximo 12 MB por archivo</small></span><input type="file" accept="image/*" multiple onChange={e=>setImages(Array.from(e.target.files||[]).slice(0,20))} />{images.length>0&&<small>{images.length} archivo{images.length===1?'':'s'} seleccionado{images.length===1?'':'s'}</small>}</label>
         </div>
 
         <label className="check-row"><input type="checkbox" checked={form.acceptsAgencyProposals} onChange={e=>set('acceptsAgencyProposals',e.target.checked)} /><span><b>Quiero recibir propuestas de inmobiliarias y corredores</b><small>Habilita el marketplace inverso para esta propiedad.</small></span></label>
@@ -118,7 +121,7 @@ export function PublishPropertyPage() {
       <aside className="panel side-panel">
         <span className="eyebrow">CHECKLIST MVP</span>
         <h3>Antes de publicar</h3>
-        <ul className="clean-list"><li>Datos básicos completos</li><li>Precio y moneda claros</li><li>No prometer “verificado” sin evidencia</li><li>Fotos y documentación se agregarán en el siguiente sprint</li></ul>
+        <ul className="clean-list"><li>Datos básicos completos</li><li>Precio y moneda claros</li><li>Fotos reales y representativas</li><li>No prometer “verificado” sin evidencia</li></ul>
         <div className="notice">Property Score queda inicialmente en “sin datos suficientes”. El score se calculará sólo cuando existan señales objetivas.</div>
       </aside>
     </div>
