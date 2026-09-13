@@ -1,4 +1,4 @@
-import { addDoc, collection, doc, getDocs, limit, orderBy, query, serverTimestamp, updateDoc, where } from 'firebase/firestore'
+import { addDoc, collection, doc, getDoc, getDocs, limit, orderBy, query, serverTimestamp, updateDoc, where } from 'firebase/firestore'
 import { getDownloadURL, ref as storageRef, uploadBytes } from 'firebase/storage'
 import { db, storage } from '../lib/firebase'
 import type { PropertyRecord } from '../types/domain'
@@ -38,6 +38,12 @@ export async function createPropertyWithImages(input: PropertyRecord, files: Fil
   })
 
   return id
+}
+
+export async function getProperty(propertyId: string) {
+  if (!db) return null
+  const snapshot = await getDoc(doc(db, 'properties', propertyId))
+  return snapshot.exists() ? ({ id: snapshot.id, ...snapshot.data() } as PropertyRecord) : null
 }
 
 export async function listPublishedProperties(max = 24) {
