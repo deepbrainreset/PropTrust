@@ -1,4 +1,4 @@
-import { Building2, CalendarDays, ClipboardList, Home, LogOut, MessageSquare, Plus, Search, ShieldCheck } from 'lucide-react'
+import { BadgeCheck, Building2, CalendarDays, ClipboardList, Home, LogOut, MessageSquare, Plus, Search, ShieldCheck } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 
@@ -7,6 +7,7 @@ export function DashboardPage() {
   const name = profile?.displayName || user?.displayName || 'Usuario demo'
   const role = profile?.role || (firebaseConfigured ? 'BUYER' : 'DEMO')
   const isProfessional = role === 'AGENT' || role === 'AGENCY' || role === 'ADMIN' || role === 'SUPER_ADMIN' || role === 'DEMO'
+  const canHaveProfessionalProfile = role === 'AGENT' || role === 'AGENCY' || role === 'DEMO'
   const isOwner = role === 'OWNER' || role === 'ADMIN' || role === 'SUPER_ADMIN' || role === 'DEMO'
   const hasCrm = isProfessional || isOwner
 
@@ -25,7 +26,7 @@ export function DashboardPage() {
         <article className="panel dashboard-card"><Home/><div><strong>0</strong><span>Propiedades activas</span></div><Link to="/publicar">Crear publicación →</Link></article>
         <article className="panel dashboard-card"><ClipboardList/><div><strong>0</strong><span>{isProfessional?'Captaciones':'Propuestas recibidas'}</span></div>{isProfessional?<Link to="/oportunidades">Ver oportunidades →</Link>:isOwner?<Link to="/propuestas">Comparar propuestas →</Link>:<span className="muted-text">Marketplace inverso</span>}</article>
         <article className="panel dashboard-card"><MessageSquare/><div><strong>0</strong><span>Leads abiertos</span></div>{hasCrm?<Link to="/crm">Abrir CRM →</Link>:<span className="muted-text">Consultas de propiedades</span>}</article>
-        <article className="panel dashboard-card"><Building2/><div><strong>—</strong><span>Trust Score</span></div><span className="muted-text">Sin datos suficientes</span></article>
+        <article className="panel dashboard-card"><Building2/><div><strong>—</strong><span>Trust Score</span></div>{canHaveProfessionalProfile?<Link to="/perfil-profesional">Gestionar perfil →</Link>:<span className="muted-text">Sin datos suficientes</span>}</article>
       </div>
 
       <div className="dashboard-actions-grid">
@@ -33,11 +34,12 @@ export function DashboardPage() {
         {isProfessional&&<Link className="panel quick-action" to="/oportunidades"><ClipboardList/><span><b>Buscar captaciones</b><small>Propietarios que aceptan propuestas.</small></span></Link>}
         {isOwner&&<Link className="panel quick-action" to="/propuestas"><ShieldCheck/><span><b>Comparar propuestas</b><small>Rango, comisión, plazo y estrategia.</small></span></Link>}
         {hasCrm&&<Link className="panel quick-action" to="/crm"><CalendarDays/><span><b>CRM y visitas</b><small>Pipeline comercial y agenda de solicitudes.</small></span></Link>}
+        {canHaveProfessionalProfile&&<Link className="panel quick-action" to="/perfil-profesional"><BadgeCheck/><span><b>Perfil y verificación</b><small>Matrícula, datos públicos y Trust Score.</small></span></Link>}
       </div>
 
       <section className="panel dashboard-section">
-        <div><span className="eyebrow">FLUJO ACTIVO</span><h2>De la publicación al seguimiento comercial</h2><p>Las fichas generan consultas y solicitudes de visita, y el CRM permite mover cada oportunidad desde nuevo lead hasta cierre.</p></div>
-        <Link className="primary" to={hasCrm?'/crm':'/propiedades'}>{hasCrm?'Abrir CRM':'Explorar propiedades'}</Link>
+        <div><span className="eyebrow">FLUJO ACTIVO</span><h2>De la publicación a la reputación verificable</h2><p>PropTrust ya conecta captación, consultas, visitas y CRM. Los perfiles profesionales separan datos declarados de señales realmente verificadas.</p></div>
+        <Link className="primary" to={canHaveProfessionalProfile?'/perfil-profesional':hasCrm?'/crm':'/propiedades'}>{canHaveProfessionalProfile?'Gestionar perfil':hasCrm?'Abrir CRM':'Explorar propiedades'}</Link>
       </section>
     </main>
   </div>
