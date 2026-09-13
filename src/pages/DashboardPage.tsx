@@ -1,4 +1,4 @@
-import { Building2, ClipboardList, Home, LogOut, MessageSquare, Plus, ShieldCheck } from 'lucide-react'
+import { Building2, ClipboardList, Home, LogOut, MessageSquare, Plus, Search, ShieldCheck } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 
@@ -6,6 +6,8 @@ export function DashboardPage() {
   const { profile, user, logout, firebaseConfigured } = useAuth()
   const name = profile?.displayName || user?.displayName || 'Usuario demo'
   const role = profile?.role || (firebaseConfigured ? 'BUYER' : 'DEMO')
+  const isProfessional = role === 'AGENT' || role === 'AGENCY' || role === 'ADMIN' || role === 'SUPER_ADMIN' || role === 'DEMO'
+  const isOwner = role === 'OWNER' || role === 'ADMIN' || role === 'SUPER_ADMIN' || role === 'DEMO'
 
   return <div className="page-shell dashboard-page">
     <header className="dashboard-header">
@@ -19,15 +21,21 @@ export function DashboardPage() {
       <div className="section-head compact-head"><div><span className="eyebrow">PANEL</span><h1>Centro de operaciones</h1><p>Publicaciones, propuestas, leads y reputación en un único lugar.</p></div><Link to="/publicar" className="primary"><Plus size={17}/>Publicar propiedad</Link></div>
 
       <div className="dashboard-grid">
-        <article className="panel dashboard-card"><Home/><div><strong>0</strong><span>Propiedades activas</span></div><Link to="/publicar">Crear primera publicación →</Link></article>
-        <article className="panel dashboard-card"><ClipboardList/><div><strong>0</strong><span>Propuestas recibidas</span></div><span className="muted-text">Marketplace inverso</span></article>
-        <article className="panel dashboard-card"><MessageSquare/><div><strong>0</strong><span>Leads abiertos</span></div><span className="muted-text">CRM</span></article>
+        <article className="panel dashboard-card"><Home/><div><strong>0</strong><span>Propiedades activas</span></div><Link to="/publicar">Crear publicación →</Link></article>
+        <article className="panel dashboard-card"><ClipboardList/><div><strong>0</strong><span>{isProfessional?'Captaciones':'Propuestas recibidas'}</span></div>{isProfessional?<Link to="/oportunidades">Ver oportunidades →</Link>:isOwner?<Link to="/propuestas">Comparar propuestas →</Link>:<span className="muted-text">Marketplace inverso</span>}</article>
+        <article className="panel dashboard-card"><MessageSquare/><div><strong>0</strong><span>Leads abiertos</span></div><span className="muted-text">CRM · siguiente bloque</span></article>
         <article className="panel dashboard-card"><Building2/><div><strong>—</strong><span>Trust Score</span></div><span className="muted-text">Sin datos suficientes</span></article>
       </div>
 
+      <div className="dashboard-actions-grid">
+        <Link className="panel quick-action" to="/propiedades"><Search/><span><b>Explorar propiedades</b><small>Catálogo público y filtros.</small></span></Link>
+        {isProfessional&&<Link className="panel quick-action" to="/oportunidades"><ClipboardList/><span><b>Buscar captaciones</b><small>Propietarios que aceptan propuestas.</small></span></Link>}
+        {isOwner&&<Link className="panel quick-action" to="/propuestas"><ShieldCheck/><span><b>Comparar propuestas</b><small>Rango, comisión, plazo y estrategia.</small></span></Link>}
+      </div>
+
       <section className="panel dashboard-section">
-        <div><span className="eyebrow">SIGUIENTE HITO</span><h2>Publicá la primera propiedad real</h2><p>El circuito implementado guarda publicaciones en Firestore cuando Firebase está configurado. Las fotos, propuestas profesionales y CRM se conectan en los siguientes bloques.</p></div>
-        <Link className="primary" to="/publicar">Ir al formulario</Link>
+        <div><span className="eyebrow">FLUJO ACTIVO</span><h2>Marketplace inverso conectado</h2><p>Los dueños pueden habilitar captaciones y los profesionales enviar propuestas comparables. El siguiente bloque será CRM, agenda y perfiles profesionales verificables.</p></div>
+        <Link className="primary" to={isProfessional?'/oportunidades':'/publicar'}>{isProfessional?'Ver oportunidades':'Publicar propiedad'}</Link>
       </section>
     </main>
   </div>
