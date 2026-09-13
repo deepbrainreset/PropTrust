@@ -7,6 +7,9 @@ service cloud.firestore {
     function hasRole(roles) { return signedIn() && userDoc().data.role in roles; }
     function isAdmin() { return hasRole(['ADMIN', 'SUPER_ADMIN']); }
     function selfAssignableRole(role) { return role in ['BUYER', 'OWNER', 'AGENT', 'AGENCY']; }
+    function propertyDoc(propertyId) { return get(/databases/$(database)/documents/properties/$(propertyId)); }
+    function ownsTargetProperty(propertyId) { return signedIn() && propertyDoc(propertyId).data.ownerId == request.auth.uid; }
+    function proposalStatusOnlyChanged() { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt']); }
 
     match /users/{userId} {
       allow read: if isOwner(userId) || isAdmin();
@@ -22,9 +25,36 @@ service cloud.firestore {
     }
 
     match /proposals/{proposalId} {
-      allow create: if hasRole(['AGENT', 'AGENCY', 'ADMIN', 'SUPER_ADMIN']) && request.resource.data.professionalId == request.auth.uid;
-      allow read: if signedIn() && (resource.data.professionalId == request.auth.uid || get(/databases/$(database)/documents/properties/$(resource.data.propertyId)).data.ownerId == request.auth.uid || isAdmin());
-      allow update: if signedIn() && (resource.data.professionalId == request.auth.uid || get(/databases/$(database)/documents/properties/$(resource.data.propertyId)).data.ownerId == request.auth.uid || isAdmin());
+      allow create: if hasRole(['AGENT', 'AGENCY'])
+        && request.resource.data.professionalId == request.auth.uid
+        && request.resource.data.professionalName == userDoc().data.displayName
+        && request.resource.data.professionalRole == userDoc().data.role
+        && request.resource.data.status == 'sent'
+        && propertyDoc(request.resource.data.propertyId).data.status == 'published'
+        && propertyDoc(request.resource.data.propertyId).data.acceptsAgencyProposals == true;
+
+      allow read: if signedIn() && (
+        resource.data.professionalId == request.auth.uid
+        || ownsTargetProperty(resource.data.propertyId)
+        || isAdmin()
+      );
+
+      allow update: if isAdmin()
+        || (
+          signedIn()
+          && proposalStatusOnlyChanged()
+          && resource.data.professionalId == request.auth.uid
+          && resource.data.status == 'sent'
+          && request.resource.data.status == 'withdrawn'
+        )
+        || (
+          signedIn()
+          && proposalStatusOnlyChanged()
+          && ownsTargetProperty(resource.data.propertyId)
+          && resource.data.status == 'sent'
+          && request.resource.data.status in ['accepted', 'rejected']
+        );
+
       allow delete: if isAdmin();
     }
 

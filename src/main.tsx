@@ -5,6 +5,7 @@ import { AuthProvider } from './auth/AuthContext'
 import './styles.css'
 import './app.css'
 import './register.css'
+import './marketplace.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

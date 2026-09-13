@@ -53,3 +53,10 @@ export async function listPublishedProperties(max = 24) {
   const snapshot = await getDocs(q)
   return snapshot.docs.map((snapshotDoc) => ({ id: snapshotDoc.id, ...snapshotDoc.data() })) as PropertyRecord[]
 }
+
+export async function listOwnerProperties(ownerId: string) {
+  if (!db) return [] as PropertyRecord[]
+  const q = query(collection(db, 'properties'), where('ownerId', '==', ownerId))
+  const snapshot = await getDocs(q)
+  return snapshot.docs.map((snapshotDoc) => ({ id: snapshotDoc.id, ...snapshotDoc.data() })) as PropertyRecord[]
+}
