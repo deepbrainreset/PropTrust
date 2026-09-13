@@ -9,6 +9,7 @@ export function DashboardPage() {
   const isProfessional = role === 'AGENT' || role === 'AGENCY' || role === 'ADMIN' || role === 'SUPER_ADMIN' || role === 'DEMO'
   const canHaveProfessionalProfile = role === 'AGENT' || role === 'AGENCY' || role === 'DEMO'
   const isOwner = role === 'OWNER' || role === 'ADMIN' || role === 'SUPER_ADMIN' || role === 'DEMO'
+  const isAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN' || role === 'DEMO'
   const hasCrm = isProfessional || isOwner
 
   return <div className="page-shell dashboard-page">
@@ -19,7 +20,6 @@ export function DashboardPage() {
 
     <main className="dashboard-main">
       {!firebaseConfigured && <div className="notice warning">Modo demo: la navegación y formularios están activos; persistencia y sesión real se habilitan al cargar las variables de Firebase.</div>}
-
       <div className="section-head compact-head"><div><span className="eyebrow">PANEL</span><h1>Centro de operaciones</h1><p>Publicaciones, propuestas, leads, visitas y reputación en un único lugar.</p></div><Link to="/publicar" className="primary"><Plus size={17}/>Publicar propiedad</Link></div>
 
       <div className="dashboard-grid">
@@ -35,12 +35,10 @@ export function DashboardPage() {
         {isOwner&&<Link className="panel quick-action" to="/propuestas"><ShieldCheck/><span><b>Comparar propuestas</b><small>Rango, comisión, plazo y estrategia.</small></span></Link>}
         {hasCrm&&<Link className="panel quick-action" to="/crm"><CalendarDays/><span><b>CRM y visitas</b><small>Pipeline comercial y agenda de solicitudes.</small></span></Link>}
         {canHaveProfessionalProfile&&<Link className="panel quick-action" to="/perfil-profesional"><BadgeCheck/><span><b>Perfil y verificación</b><small>Matrícula, datos públicos y Trust Score.</small></span></Link>}
+        {isAdmin&&<Link className="panel quick-action" to="/admin"><ShieldCheck/><span><b>Super Admin</b><small>Verificaciones, reputación y control operativo.</small></span></Link>}
       </div>
 
-      <section className="panel dashboard-section">
-        <div><span className="eyebrow">FLUJO ACTIVO</span><h2>De la publicación a la reputación verificable</h2><p>PropTrust ya conecta captación, consultas, visitas y CRM. Los perfiles profesionales separan datos declarados de señales realmente verificadas.</p></div>
-        <Link className="primary" to={canHaveProfessionalProfile?'/perfil-profesional':hasCrm?'/crm':'/propiedades'}>{canHaveProfessionalProfile?'Gestionar perfil':hasCrm?'Abrir CRM':'Explorar propiedades'}</Link>
-      </section>
+      <section className="panel dashboard-section"><div><span className="eyebrow">FLUJO ACTIVO</span><h2>De la publicación a la reputación verificable</h2><p>PropTrust conecta captación, consultas, visitas, CRM, verificación profesional y evidencia reputacional.</p></div><Link className="primary" to={isAdmin?'/admin':canHaveProfessionalProfile?'/perfil-profesional':hasCrm?'/crm':'/propiedades'}>{isAdmin?'Abrir Super Admin':canHaveProfessionalProfile?'Gestionar perfil':hasCrm?'Abrir CRM':'Explorar propiedades'}</Link></section>
     </main>
   </div>
 }

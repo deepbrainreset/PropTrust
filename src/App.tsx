@@ -3,6 +3,7 @@ import { ProtectedRoute } from './auth/ProtectedRoute'
 import { AdminVerificationPage } from './pages/AdminVerificationPage'
 import { CrmPage } from './pages/CrmPage'
 import { DashboardPage } from './pages/DashboardPage'
+import { FoundersPage } from './pages/FoundersPage'
 import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
 import { OpportunitiesPage } from './pages/OpportunitiesPage'
@@ -13,6 +14,7 @@ import { PropertiesPage } from './pages/PropertiesPage'
 import { PropertyDetailPage } from './pages/PropertyDetailPage'
 import { PublishPropertyPage } from './pages/PublishPropertyPage'
 import { RegisterPage } from './pages/RegisterPage'
+import { SuperAdminPage } from './pages/SuperAdminPage'
 
 export function App() {
   return <BrowserRouter>
@@ -21,6 +23,7 @@ export function App() {
       <Route path="/propiedades" element={<PropertiesPage />} />
       <Route path="/propiedad/:id" element={<PropertyDetailPage />} />
       <Route path="/profesionales" element={<ProfessionalsPage />} />
+      <Route path="/fundadores" element={<FoundersPage />} />
       <Route path="/ingresar" element={<LoginPage />} />
       <Route path="/registro" element={<RegisterPage />} />
       <Route path="/panel" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
@@ -29,6 +32,7 @@ export function App() {
       <Route path="/propuestas" element={<ProtectedRoute><OwnerProposalsPage /></ProtectedRoute>} />
       <Route path="/crm" element={<ProtectedRoute><CrmPage /></ProtectedRoute>} />
       <Route path="/perfil-profesional" element={<ProtectedRoute><ProfessionalProfilePage /></ProtectedRoute>} />
+      <Route path="/admin" element={<ProtectedRoute><SuperAdminPage /></ProtectedRoute>} />
       <Route path="/admin/verificaciones" element={<ProtectedRoute><AdminVerificationPage /></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

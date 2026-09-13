@@ -2,101 +2,40 @@ import { useEffect, useMemo, useState } from 'react'
 import { ArrowLeft, Bath, BedDouble, CalendarDays, CheckCircle2, Loader2, MapPin, MessageSquare, Ruler, ShieldCheck } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
+import { applySeo } from '../lib/seo'
 import { createLead, createVisitRequest } from '../services/crm'
 import { getProperty } from '../services/properties'
+import { calculatePropertyScore } from '../services/scoring'
 import type { LeadRecord, PropertyRecord, VisitRequest } from '../types/domain'
 
-const demoProperty: PropertyRecord = {
-  id:'demo-1', ownerId:'demo-owner', title:'Departamento luminoso con balcón', description:'Propiedad de demostración para validar el flujo de contacto y solicitud de visita. No representa una publicación real.', operation:'sale', status:'published', currency:'USD', price:128000, neighborhood:'Palermo', city:'CABA', rooms:3, bedrooms:2, bathrooms:1, areaM2:62, expenses:95000, propertyType:'Departamento', amenities:['Balcón','Luminoso'], acceptsAgencyProposals:true, imageUrls:['https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1400&q=85'], propertyScore:null,
-}
+const demoProperty: PropertyRecord = { id:'demo-1', ownerId:'demo-owner', title:'Departamento luminoso con balcón', description:'Propiedad de demostración para validar el flujo de contacto y solicitud de visita. No representa una publicación real.', operation:'sale', status:'published', currency:'USD', price:128000, neighborhood:'Palermo', city:'CABA', rooms:3, bedrooms:2, bathrooms:1, areaM2:62, expenses:95000, propertyType:'Departamento', amenities:['Balcón','Luminoso'], acceptsAgencyProposals:true, imageUrls:['https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1400&q=85'], propertyScore:null }
 
 export function PropertyDetailPage(){
-  const { id='' }=useParams()
-  const { user, profile, firebaseConfigured }=useAuth()
-  const [property,setProperty]=useState<PropertyRecord|null>(firebaseConfigured?null:demoProperty)
-  const [loading,setLoading]=useState(firebaseConfigured)
-  const [error,setError]=useState('')
-  const [message,setMessage]=useState('')
-  const [contactText,setContactText]=useState('Hola, me interesa esta propiedad. Quisiera recibir más información.')
-  const [visitDate,setVisitDate]=useState('')
-  const [visitTime,setVisitTime]=useState('')
-  const [visitNotes,setVisitNotes]=useState('')
-  const [busy,setBusy]=useState<'contact'|'visit'|''>('')
+  const { id='' }=useParams(); const { user,profile,firebaseConfigured }=useAuth()
+  const [property,setProperty]=useState<PropertyRecord|null>(firebaseConfigured?null:demoProperty); const [loading,setLoading]=useState(firebaseConfigured); const [error,setError]=useState(''); const [message,setMessage]=useState('')
+  const [contactText,setContactText]=useState('Hola, me interesa esta propiedad. Quisiera recibir más información.'); const [visitDate,setVisitDate]=useState(''); const [visitTime,setVisitTime]=useState(''); const [visitNotes,setVisitNotes]=useState(''); const [busy,setBusy]=useState<'contact'|'visit'|''>('')
 
-  useEffect(()=>{
-    if(!firebaseConfigured) return
-    setLoading(true)
-    getProperty(id).then(p=>{
-      if(!p||p.status!=='published') setError('La propiedad no existe o ya no está publicada.')
-      else setProperty(p)
-    }).catch(err=>setError(err instanceof Error?err.message:'No se pudo cargar la propiedad.')).finally(()=>setLoading(false))
-  },[firebaseConfigured,id])
+  useEffect(()=>{ if(!firebaseConfigured)return; setLoading(true); getProperty(id).then(p=>{ if(!p||p.status!=='published')setError('La propiedad no existe o ya no está publicada.'); else setProperty(p) }).catch(err=>setError(err instanceof Error?err.message:'No se pudo cargar la propiedad.')).finally(()=>setLoading(false)) },[firebaseConfigured,id])
+  useEffect(()=>{ if(!property)return; return applySeo({title:`${property.title} en ${property.neighborhood} | PropTrust`,description:`${property.propertyType} en ${property.neighborhood}, ${property.city}. ${property.rooms} ambientes, ${property.areaM2} m². Precio ${property.currency} ${property.price.toLocaleString('es-AR')}.`,canonicalPath:`/propiedad/${property.id||id}`,type:'article',structuredData:{'@context':'https://schema.org','@type':'RealEstateListing',name:property.title,description:property.description,address:{'@type':'PostalAddress',addressLocality:property.city,addressRegion:property.neighborhood,addressCountry:'AR'},floorSize:{'@type':'QuantitativeValue',value:property.areaM2,unitCode:'MTK'},offers:{'@type':'Offer',price:property.price,priceCurrency:property.currency,availability:'https://schema.org/InStock'}}}) },[property,id])
+  const requester=useMemo(()=>({id:user?.uid||'demo-requester',name:profile?.displayName||user?.displayName||'Usuario demo',email:profile?.email||user?.email||'demo@example.com'}),[user,profile])
+  const score=useMemo(()=>property?calculatePropertyScore(property):null,[property])
 
-  const requester=useMemo(()=>({
-    id:user?.uid||'demo-requester',
-    name:profile?.displayName||user?.displayName||'Usuario demo',
-    email:profile?.email||user?.email||'demo@example.com',
-  }),[user,profile])
-
-  async function contact(){
-    if(!property) return
-    if(!contactText.trim()){setError('Escribí un mensaje antes de enviarlo.');return}
-    if(firebaseConfigured&&!user){setError('Iniciá sesión para contactar al anunciante.');return}
-    setBusy('contact');setError('');setMessage('')
-    try{
-      if(firebaseConfigured){
-        const lead:LeadRecord={propertyId:property.id!,propertyTitle:property.title,ownerId:property.ownerId,requesterId:requester.id,requesterName:requester.name,requesterEmail:requester.email,assigneeId:property.ownerId,message:contactText.trim(),stage:'new',source:'property_contact'}
-        await createLead(lead)
-      }
-      setMessage(firebaseConfigured?'Consulta enviada. El anunciante la verá en su CRM.':'Consulta demo validada. Con Firebase activo creará un lead real.')
-    }catch(err){setError(err instanceof Error?err.message:'No se pudo enviar la consulta.')}finally{setBusy('')}
-  }
-
-  async function requestVisit(){
-    if(!property) return
-    if(!visitDate||!visitTime){setError('Elegí fecha y horario para solicitar la visita.');return}
-    if(firebaseConfigured&&!user){setError('Iniciá sesión para solicitar una visita.');return}
-    setBusy('visit');setError('');setMessage('')
-    try{
-      if(firebaseConfigured){
-        const visit:VisitRequest={propertyId:property.id!,propertyTitle:property.title,ownerId:property.ownerId,requesterId:requester.id,requesterName:requester.name,requesterEmail:requester.email,requestedDate:visitDate,requestedTime:visitTime,notes:visitNotes.trim(),status:'pending'}
-        await createVisitRequest(visit)
-        const lead:LeadRecord={propertyId:property.id!,propertyTitle:property.title,ownerId:property.ownerId,requesterId:requester.id,requesterName:requester.name,requesterEmail:requester.email,assigneeId:property.ownerId,message:`Solicitud de visita: ${visitDate} ${visitTime}${visitNotes?` · ${visitNotes}`:''}`,stage:'visit',source:'visit_request'}
-        await createLead(lead)
-      }
-      setMessage(firebaseConfigured?'Solicitud de visita enviada. Queda pendiente de confirmación.':'Solicitud demo validada. Con Firebase activo creará visita y lead.')
-      setVisitNotes('')
-    }catch(err){setError(err instanceof Error?err.message:'No se pudo solicitar la visita.')}finally{setBusy('')}
-  }
+  async function contact(){ if(!property)return; if(!contactText.trim()){setError('Escribí un mensaje antes de enviarlo.');return} if(firebaseConfigured&&!user){setError('Iniciá sesión para contactar al anunciante.');return} setBusy('contact');setError('');setMessage(''); try{ if(firebaseConfigured){ const lead:LeadRecord={propertyId:property.id!,propertyTitle:property.title,ownerId:property.ownerId,requesterId:requester.id,requesterName:requester.name,requesterEmail:requester.email,assigneeId:property.ownerId,message:contactText.trim(),stage:'new',source:'property_contact'}; await createLead(lead) } setMessage(firebaseConfigured?'Consulta enviada. El anunciante la verá en su CRM.':'Consulta demo validada. Con Firebase activo creará un lead real.') }catch(err){setError(err instanceof Error?err.message:'No se pudo enviar la consulta.')}finally{setBusy('')} }
+  async function requestVisit(){ if(!property)return; if(!visitDate||!visitTime){setError('Elegí fecha y horario para solicitar la visita.');return} if(firebaseConfigured&&!user){setError('Iniciá sesión para solicitar una visita.');return} setBusy('visit');setError('');setMessage(''); try{ if(firebaseConfigured){ const visit:VisitRequest={propertyId:property.id!,propertyTitle:property.title,ownerId:property.ownerId,requesterId:requester.id,requesterName:requester.name,requesterEmail:requester.email,requestedDate:visitDate,requestedTime:visitTime,notes:visitNotes.trim(),status:'pending'}; await createVisitRequest(visit); const lead:LeadRecord={propertyId:property.id!,propertyTitle:property.title,ownerId:property.ownerId,requesterId:requester.id,requesterName:requester.name,requesterEmail:requester.email,assigneeId:property.ownerId,message:`Solicitud de visita: ${visitDate} ${visitTime}${visitNotes?` · ${visitNotes}`:''}`,stage:'visit',source:'visit_request'}; await createLead(lead) } setMessage(firebaseConfigured?'Solicitud de visita enviada. Queda pendiente de confirmación.':'Solicitud demo validada. Con Firebase activo creará visita y lead.'); setVisitNotes('') }catch(err){setError(err instanceof Error?err.message:'No se pudo solicitar la visita.')}finally{setBusy('')} }
 
   if(loading)return <div className="page-shell"><div className="catalog-empty"><Loader2 className="spin"/>Cargando propiedad…</div></div>
   if(!property)return <div className="page-shell"><div className="panel access-panel"><h1>Propiedad no disponible</h1><p>{error||'No encontramos esta publicación.'}</p><Link className="primary" to="/propiedades">Ver propiedades</Link></div></div>
 
+  const visibleScore=property.propertyScore??score?.total
   return <div className="page-shell property-detail-page">
     <div className="page-topbar"><Link to="/propiedades" className="text-link"><ArrowLeft size={16}/>Propiedades</Link><span className="eyebrow">FICHA</span></div>
-    {!firebaseConfigured&&<div className="notice warning">Modo demo: esta ficha y sus datos son ficticios.</div>}
-    {error&&<div className="notice error">{error}</div>}
-    {message&&<div className="notice success"><CheckCircle2 size={17}/>{message}</div>}
-
-    <div className="property-detail-grid">
-      <main>
-        <div className="detail-gallery"><img src={property.imageUrls[0]||'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=1400&q=85'} alt={property.title}/></div>
-        <section className="panel detail-main-card">
-          <span className="eyebrow">{property.operation==='sale'?'VENTA':property.operation==='rent'?'ALQUILER':'TEMPORARIO'}</span>
-          <h1>{property.title}</h1>
-          <p className="detail-location"><MapPin size={17}/>{property.neighborhood}, {property.city}</p>
-          <strong className="detail-price">{property.currency} {property.price.toLocaleString('es-AR')}</strong>
-          <div className="detail-facts"><span><BedDouble/> {property.rooms} ambientes</span><span><Bath/> {property.bathrooms} baños</span><span><Ruler/> {property.areaM2} m²</span></div>
-          <div className="detail-score"><ShieldCheck/><div><b>Property Score</b><span>{property.propertyScore==null?'Sin datos suficientes':`${property.propertyScore}/100`}</span></div></div>
-          <div className="detail-description"><h2>Descripción</h2><p>{property.description||'Sin descripción disponible.'}</p></div>
-          {property.expenses!=null&&<p><b>Expensas:</b> ARS {property.expenses.toLocaleString('es-AR')}</p>}
-        </section>
-      </main>
-
-      <aside className="detail-sidebar">
-        <section className="panel contact-card"><MessageSquare/><h3>Contactar anunciante</h3><p>Tu consulta se incorporará al CRM asociado a esta propiedad.</p><textarea rows={5} value={contactText} onChange={e=>setContactText(e.target.value)}/><button className="primary wide" disabled={busy==='contact'} onClick={contact}>{busy==='contact'?<Loader2 className="spin" size={17}/>:<MessageSquare size={17}/>}Enviar consulta</button></section>
-        <section className="panel contact-card"><CalendarDays/><h3>Solicitar visita</h3><div className="visit-fields"><label>Fecha<input type="date" value={visitDate} onChange={e=>setVisitDate(e.target.value)}/></label><label>Horario<input type="time" value={visitTime} onChange={e=>setVisitTime(e.target.value)}/></label></div><label>Notas<textarea rows={3} value={visitNotes} onChange={e=>setVisitNotes(e.target.value)} placeholder="Preferencias o aclaraciones"/></label><button className="ghost wide" disabled={busy==='visit'} onClick={requestVisit}>{busy==='visit'?<Loader2 className="spin" size={17}/>:<CalendarDays size={17}/>}Solicitar visita</button></section>
-      </aside>
-    </div>
+    {!firebaseConfigured&&<div className="notice warning">Modo demo: esta ficha y sus datos son ficticios.</div>}{error&&<div className="notice error">{error}</div>}{message&&<div className="notice success"><CheckCircle2 size={17}/>{message}</div>}
+    <div className="property-detail-grid"><main><div className="detail-gallery"><img src={property.imageUrls[0]||'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=1400&q=85'} alt={property.title}/></div><section className="panel detail-main-card">
+      <span className="eyebrow">{property.operation==='sale'?'VENTA':property.operation==='rent'?'ALQUILER':'TEMPORARIO'}</span><h1>{property.title}</h1><p className="detail-location"><MapPin size={17}/>{property.neighborhood}, {property.city}</p><strong className="detail-price">{property.currency} {property.price.toLocaleString('es-AR')}</strong>
+      <div className="detail-facts"><span><BedDouble/> {property.rooms} ambientes</span><span><Bath/> {property.bathrooms} baños</span><span><Ruler/> {property.areaM2} m²</span></div>
+      <div className="detail-score"><ShieldCheck/><div><b>Property Score</b><span>{visibleScore==null?'Sin datos suficientes':`${visibleScore}/100${property.propertyScore==null?' · preliminar':''}`}</span><small>{property.propertyScore==null?'Calculado sólo con señales disponibles; no equivale a tasación ni verificación documental.':'Score registrado con evidencia disponible.'}</small></div></div>
+      {property.propertyScore==null&&score&&score.notes.length>0&&<div className="notice warning"><div><b>Qué falta para mejorar la confianza</b>{score.notes.slice(0,3).map(note=><p key={note}>{note}</p>)}</div></div>}
+      <div className="detail-description"><h2>Descripción</h2><p>{property.description||'Sin descripción disponible.'}</p></div>{property.expenses!=null&&<p><b>Expensas:</b> ARS {property.expenses.toLocaleString('es-AR')}</p>}
+    </section></main><aside className="detail-sidebar"><section className="panel contact-card"><MessageSquare/><h3>Contactar anunciante</h3><p>Tu consulta se incorporará al CRM asociado a esta propiedad.</p><textarea rows={5} value={contactText} onChange={e=>setContactText(e.target.value)}/><button className="primary wide" disabled={busy==='contact'} onClick={contact}>{busy==='contact'?<Loader2 className="spin" size={17}/>:<MessageSquare size={17}/>}Enviar consulta</button></section><section className="panel contact-card"><CalendarDays/><h3>Solicitar visita</h3><div className="visit-fields"><label>Fecha<input type="date" value={visitDate} onChange={e=>setVisitDate(e.target.value)}/></label><label>Horario<input type="time" value={visitTime} onChange={e=>setVisitTime(e.target.value)}/></label></div><label>Notas<textarea rows={3} value={visitNotes} onChange={e=>setVisitNotes(e.target.value)} placeholder="Preferencias o aclaraciones"/></label><button className="ghost wide" disabled={busy==='visit'} onClick={requestVisit}>{busy==='visit'?<Loader2 className="spin" size={17}/>:<CalendarDays size={17}/>}Solicitar visita</button></section></aside></div>
   </div>
 }
