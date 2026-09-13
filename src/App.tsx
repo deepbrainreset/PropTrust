@@ -5,6 +5,7 @@ import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
 import { PropertiesPage } from './pages/PropertiesPage'
 import { PublishPropertyPage } from './pages/PublishPropertyPage'
+import { RegisterPage } from './pages/RegisterPage'
 
 export function App() {
   return <BrowserRouter>
@@ -12,6 +13,7 @@ export function App() {
       <Route path="/" element={<HomePage />} />
       <Route path="/propiedades" element={<PropertiesPage />} />
       <Route path="/ingresar" element={<LoginPage />} />
+      <Route path="/registro" element={<RegisterPage />} />
       <Route path="/panel" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
       <Route path="/publicar" element={<ProtectedRoute><PublishPropertyPage /></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/" replace />} />
