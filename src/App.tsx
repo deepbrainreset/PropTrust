@@ -3,6 +3,7 @@ import { ProtectedRoute } from './auth/ProtectedRoute'
 import { DashboardPage } from './pages/DashboardPage'
 import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
+import { OpportunitiesPage } from './pages/OpportunitiesPage'
 import { PropertiesPage } from './pages/PropertiesPage'
 import { PublishPropertyPage } from './pages/PublishPropertyPage'
 import { RegisterPage } from './pages/RegisterPage'
@@ -16,6 +17,7 @@ export function App() {
       <Route path="/registro" element={<RegisterPage />} />
       <Route path="/panel" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
       <Route path="/publicar" element={<ProtectedRoute><PublishPropertyPage /></ProtectedRoute>} />
+      <Route path="/oportunidades" element={<ProtectedRoute><OpportunitiesPage /></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   </BrowserRouter>
