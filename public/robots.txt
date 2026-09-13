@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /panel
+Disallow: /crm
+Disallow: /perfil-profesional
+Disallow: /oportunidades
+Disallow: /propuestas

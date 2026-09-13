@@ -8,6 +8,7 @@ import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
 import { OpportunitiesPage } from './pages/OpportunitiesPage'
 import { OwnerProposalsPage } from './pages/OwnerProposalsPage'
+import { PricingPage } from './pages/PricingPage'
 import { ProfessionalsPage } from './pages/ProfessionalsPage'
 import { ProfessionalProfilePage } from './pages/ProfessionalProfilePage'
 import { PropertiesPage } from './pages/PropertiesPage'
@@ -24,6 +25,7 @@ export function App() {
       <Route path="/propiedad/:id" element={<PropertyDetailPage />} />
       <Route path="/profesionales" element={<ProfessionalsPage />} />
       <Route path="/fundadores" element={<FoundersPage />} />
+      <Route path="/planes" element={<PricingPage />} />
       <Route path="/ingresar" element={<LoginPage />} />
       <Route path="/registro" element={<RegisterPage />} />
       <Route path="/panel" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
